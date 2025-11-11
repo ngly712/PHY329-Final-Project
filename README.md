@@ -43,6 +43,7 @@ To experimentally determine the onset of chaos, we will implement a collection o
 4. Generate the final report in `map.ipynb`.
 
 Optional:
+
 5. Implement the kicked rotator as a separate class and make the Standard Map a subclass of it.
 6. Modify `mapEval.py` to account for additional variables like the kick strength and duration.
 7. Perform a similar analysis of the chaotic behavior for the kicked rotator.

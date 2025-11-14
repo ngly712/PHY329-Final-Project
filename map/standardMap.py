@@ -15,7 +15,7 @@ class standardMap():
     # and theta
     # Call the list "runs"
     # Initialization makes an empty list
-    def __init__(self, K: int=1, nIters: int=500, seed=None) -> None:
+    def __init__(self, K: float=1, nIters: int=500, seed=None) -> None:
         # Checks for K and nIters
         assert isinstance(K, float)
         assert isinstance(nIters, int)
@@ -42,7 +42,8 @@ class standardMap():
         if isinstance(ic, int):
             assert ic > 0
             state = np.zeros((ic, 2, self.nIters))
-            state[..., 0] = np.random.uniform(0, 2*np.pi, (ic, 2, 1))
+            np.random.seed(self.seed)
+            state[..., 0] = np.random.uniform(0, 2*np.pi, (ic, 2, 1), )
         elif isinstance(ic, np.ndarray):
             assert len(ic) > 2
             assert len(ic) % 2 == 0

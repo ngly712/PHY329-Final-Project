@@ -1,6 +1,6 @@
 # Unit tests using the pytest library
 import numpy as np
-from map import standardMap as sMap
+from map.standardMap import standardMap as sMap
 
 
 # Planned tests:

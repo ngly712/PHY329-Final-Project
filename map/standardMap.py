@@ -44,11 +44,13 @@ class standardMap:
             state[..., 0] = np.random.uniform(
                 0,
                 2 * np.pi,
-                (ic, 2, 1),
+                (ic, 2),
             )
         elif isinstance(ic, np.ndarray):
-            assert len(ic) > 2
-            assert len(ic) % 2 == 0
+            assert ic.shape[1] == 2
+            assert ic.shape[0] > 0
+            assert np.min(ic) >= 0
+            assert np.max(ic) <= 2 * np.pi
             state = np.zeros((len(ic), 2, self.nIters))
             state[..., 0] = ic
         else:

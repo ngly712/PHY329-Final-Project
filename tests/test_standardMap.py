@@ -62,6 +62,75 @@ def test_initialization_nIters():
 # ## option - append vs replace
 # ### list length check
 # ### run parameters check
+def test_simulate_ic():
+    objs = [
+        sMap(),
+        sMap(K=0.02),
+        sMap(nIters=1200),
+        sMap(K=0.02, nIters=1200),
+    ]
+    testIc = np.array([[0.0, np.pi / 2], [np.pi, 3 * np.pi / 2], [2 * np.pi, 0.75]])
+    invalidIc = np.array([[1.1, 3.4, 2.7]])
+    invalidIc2 = np.array(
+        [[-1.0, np.pi / 2], [np.pi, 3 * np.pi / 2], [2 * np.pi, 0.75]]
+    )
+    for obj in objs:
+        obj.simulate()
+        assert obj.runs[-1]["K"] == obj.K
+        assert obj.runs[-1]["nIters"] == obj.nIters
+        assert obj.runs[-1]["run"].shape[2] == obj.nIters
+        assert obj.runs[-1]["run"].shape[1] == 2
+        assert np.min(obj.runs[-1]["run"]) >= 0
+        assert np.max(obj.runs[-1]["run"]) <= 2 * np.pi
+        obj.simulate(ic=6)
+        assert obj.runs[-1]["K"] == obj.K
+        assert obj.runs[-1]["nIters"] == obj.nIters
+        assert obj.runs[-1]["run"].shape[2] == obj.nIters
+        assert obj.runs[-1]["run"].shape[0] == 6
+        assert np.min(obj.runs[-1]["run"]) >= 0
+        assert np.max(obj.runs[-1]["run"]) <= 2 * np.pi
+        obj.simulate(ic=testIc)
+        assert obj.runs[-1]["K"] == obj.K
+        assert obj.runs[-1]["nIters"] == obj.nIters
+        assert obj.runs[-1]["run"].shape[2] == obj.nIters
+        assert obj.runs[-1]["run"].shape[0] == 3
+        assert np.min(obj.runs[-1]["run"]) >= 0
+        assert np.max(obj.runs[-1]["run"]) <= 2 * np.pi
+        assert np.allclose(obj.runs[-1]["run"][..., 0], testIc)
+        assert len(obj.runs) == 3
+        obj.simulate(ic=4, option="overwrite")
+        assert obj.runs[-1]["K"] == obj.K
+        assert obj.runs[-1]["nIters"] == obj.nIters
+        assert obj.runs[-1]["run"].shape[2] == obj.nIters
+        assert obj.runs[-1]["run"].shape[0] == 4
+        assert np.min(obj.runs[-1]["run"]) >= 0
+        assert np.max(obj.runs[-1]["run"]) <= 2 * np.pi
+        assert len(obj.runs) == 3
+        assert obj.runs[1]["K"] == obj.K
+        assert obj.runs[1]["nIters"] == obj.nIters
+        assert obj.runs[1]["run"].shape[2] == obj.nIters
+        assert obj.runs[1]["run"].shape[0] == 6
+        assert np.min(obj.runs[1]["run"]) >= 0
+        assert np.max(obj.runs[1]["run"]) <= 2 * np.pi
+        try:
+            obj.simulate(ic=-1)
+        except Exception:
+            print("Not possible")
+        else:
+            raise Exception("Invalid integer ic.")
+        try:
+            obj.simulate(ic=invalidIc)
+        except Exception:
+            print("Not possible")
+        else:
+            raise Exception("Invalic ic array shape.")
+        try:
+            obj.simulate(ic=invalidIc2)
+        except Exception:
+            print("Not possible")
+        else:
+            raise Exception("Invalic ic array values.")
+
 
 # # Getters and setters:
 # ## K

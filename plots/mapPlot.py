@@ -22,7 +22,6 @@ def plot_phase_generic(run, mode="phase", traj_index=0, point_size=0.1, title=No
     if mode not in ("phase", "poincare"):
         raise ValueError('mode must be "phase" or "poincare"')
 
-    
     if title is None:
         if mode == "phase":
             title = "Phase Space Plot"
@@ -107,15 +106,11 @@ def compute_bifurcation(Ks, ic, nIters=2000, burn_in=500, seed=None):
     return np.array(bifK), np.array(bifI)
 
 
-def plot_bifurcation(Ks, ic, nIters=2000, burn_in=500,
-                     K_min=None, K_max=None,
-                     title="Bifurcation Diagram of the Standard Map"):
+def plot_bifurcation(Ks, ic, nIters=2000, burn_in=500, K_min=None, K_max=None, title="Bifurcation Diagram of the Standard Map"):
     
     # k_min and k_max set the range for K on the bifurcation plot. Both default to None.
 
-    bifK, bifI = compute_bifurcation(Ks, ic, nIters=nIters,
-                                     burn_in=burn_in )
-
+    bifK, bifI = compute_bifurcation(Ks, ic, nIters=nIters, burn_in=burn_in )
     
     if K_min is not None or K_max is not None:
         if K_min is None:

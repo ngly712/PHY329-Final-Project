@@ -75,6 +75,7 @@ def test_simulate_ic():
         [[-1.0, np.pi / 2], [np.pi, 3 * np.pi / 2], [2 * np.pi, 0.75]]
     )
     for obj in objs:
+        print(obj)
         obj.simulate()
         assert obj.runs[-1]["K"] == obj.K
         assert obj.runs[-1]["nIters"] == obj.nIters
@@ -83,6 +84,7 @@ def test_simulate_ic():
         assert obj.runs[-1]["run"].shape[1] == 2
         assert np.min(obj.runs[-1]["run"]) >= 0
         assert np.max(obj.runs[-1]["run"]) <= 2 * np.pi
+        print(obj)
         obj.simulate(ic=6)
         assert obj.runs[-1]["K"] == obj.K
         assert obj.runs[-1]["nIters"] == obj.nIters
@@ -192,6 +194,21 @@ def test_mid_seed():
 # ## K
 # ### user, single
 # ### user, double
+# ## nIters
+# ### user, single
+# ### user, double
+
 
 # # Clear:
-# ##
+# ## total clear check
+# ## ind
+# ### user, single
+# ### user, double
+# ## K
+# ### user, single
+# ### user, double
+# ## nIters
+# ### user, single
+# ### user, double
+def test_clear_ind():
+    assert True

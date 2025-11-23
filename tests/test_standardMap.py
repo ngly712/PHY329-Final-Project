@@ -212,5 +212,61 @@ def test_mid_seed():
 # ### user, double
 def test_clear_ind():
     obj = sMap()
-    for i in range()
-    obj.simulate()
+    for i in range(64):
+        obj.simulate()
+    runBefore = obj.runs[3]
+    runAfter = obj.runs[5]
+    obj.clearRuns(run=4)
+    assert runBefore == obj.runs[3]
+    assert runAfter == obj.runs[4]
+    assert len(obj.runs) == 63
+    runBefore = obj.runs[-3]
+    runAfter = obj.runs[-1]
+    obj.clearRuns(run=-2)
+    assert runBefore == obj.runs[-2]
+    assert runAfter == obj.runs[-1]
+    assert len(obj.runs) == 62
+    try:
+        obj.clearRuns(run=68)
+    except Exception:
+        print("Not possible")
+    else:
+        raise Exception("Invalid run index passed.")
+    runBefore = obj.runs[34]
+    runAfter = obj.runs[42]
+    obj.clearRuns(run=(35, 41))
+    assert runBefore == obj.runs[34]
+    assert runAfter == obj.runs[35]
+    assert len(obj.runs) == 55
+    runBefore = obj.runs[-8]
+    runAfter = obj.runs[-3]
+    obj.clearRuns(run=(-7, -4))
+    assert runBefore == obj.runs[-4]
+    assert runAfter == obj.runs[-3]
+    assert len(obj.runs) == 51
+    try:
+        obj.clearRuns(run=(32, 29))
+    except Exception:
+        print("Not possible")
+    else:
+        raise Exception("Invalid run range passed.")
+    try:
+        obj.clearRuns(run=(-4, 35))
+    except Exception:
+        print("Not possible")
+    else:
+        raise Exception("Invalid run range passed.")
+    try:
+        obj.clearRuns(run=(3, 99))
+    except Exception:
+        print("Not possible")
+    else:
+        raise Exception("Invalid run range passed.")
+    try:
+        obj.clearRuns(run=(5,))
+    except Exception:
+        print("Not possible")
+    else:
+        raise Exception("Invalid run range passed.")
+    obj.clearRuns()
+    assert len(obj.runs) == 0

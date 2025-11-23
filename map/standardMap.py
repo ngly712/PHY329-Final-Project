@@ -165,52 +165,65 @@ class StandardMap:
             self.runs.clear()
             print("All runs cleared.")
             return
-        key, val = options.items()
         # List index clearing
-        if key == "run":
+        if "run" in options:
             # Single run clear
-            if isinstance(val, int):
-                del self.runs[val]
-                print(f"Run {val} cleared.")
+            if isinstance(options["run"], int):
+                del self.runs[options["run"]]
+                if options["run"] > -1:
+                    print(f"Run {options["run"]} cleared.")
+                else:
+                    print(f"Run {len(self.runs) + 1 + options["run"]} cleared.")
             # Range of runs cleared
-            elif isinstance(val, tuple):
-                assert len(val) == 2
-                for i in val:
+            elif isinstance(options["run"], tuple):
+                assert len(options["run"]) == 2
+                for i in options["run"]:
                     assert isinstance(i, int)
-                assert val[0] < val[1]
-                del self.runs[val[0] : val[1] + 1]
-                for i in range(val[0], val[1] + 1):
-                    print(f"Run {i} cleared.")
+                assert options["run"][0] < options["run"][1]
+                assert (
+                    options["run"][0] > -1 and options["run"][1] < len(self.runs)
+                ) or (options["run"][0] > -len(self.runs) and options["run"][1] < 0)
+                del self.runs[options["run"][0] : options["run"][1] + 1]
+                for i in range(options["run"][0], options["run"][1] + 1):
+                    if i > -1:
+                        print(f"Run {i} cleared.")
+                    else:
+                        print(f"Run {len(self.runs) + 1 + i} cleared.")
             else:
                 raise Exception(
                     "Only single values or an ascending tuple of two inclusive bounds are allowed."
                 )
         # K parameter clearing
-        elif key == "K":
+        elif "K" in options:
             # Single K clear
-            if isinstance(val, float):
-                assert val >= 0.0
+            if isinstance(options["K"], float):
+                assert options["K"] >= 0.0
                 for i in range(len(self.runs)):
-                    if self.runs[i]["K"] == val:
+                    if self.runs[i]["K"] == options["K"]:
                         ind.append(i)
                         print(f"Run {i + 1} cleared.")
                 if len(ind) == 0:
-                    print(f"No runs with K = {val} found.")
+                    print(f"No runs with K = {options["K"]} found.")
                 for j in ind:
                     del self.runs[j]
             # Range of Ks cleared
-            elif isinstance(val, tuple):
-                assert len(val) == 2
-                for i in val:
+            elif isinstance(options["K"], tuple):
+                assert len(options["K"]) == 2
+                for i in options["K"]:
                     assert isinstance(i, float)
                     assert i >= 0.0
-                assert val[0] < val[1]
+                assert options["K"][0] < options["K"][1]
                 for i in range(len(self.runs)):
-                    if self.runs[i]["K"] >= val[0] and self.runs[i]["K"] <= val[1]:
+                    if (
+                        self.runs[i]["K"] >= options["K"][0]
+                        and self.runs[i]["K"] <= options["K"][1]
+                    ):
                         ind.append(i)
                         print(f"Run {i + 1} cleared.")
                 if len(ind) == 0:
-                    print(f"No runs within K = [{val[0]}, {val[1]}] found.")
+                    print(
+                        f"No runs within K = [{options["K"][0]}, {options["K"][1]}] found."
+                    )
                 for j in ind:
                     del self.runs[j]
             else:
@@ -218,33 +231,35 @@ class StandardMap:
                     "Only single values or an ascending tuple of two inclusive bounds are allowed."
                 )
         # Run length clearing
-        elif key == "N":
+        elif "N" in options:
             # Single length clear
-            if isinstance(val, int):
-                assert val > 0
+            if isinstance(options["N"], int):
+                assert options["N"] > 0
                 for i in range(len(self.runs)):
-                    if self.runs[i]["nIters"] == val:
+                    if self.runs[i]["nIters"] == options["N"]:
                         ind.append(i)
                         print(f"Run {i + 1} cleared.")
                 if len(ind) == 0:
-                    print(f"No runs of length {val} found.")
+                    print(f"No runs of length {options["N"]} found.")
                 for j in ind:
                     del self.runs[j]
             # Range of lengths cleared
-            elif isinstance(val, tuple):
-                assert len(val) == 2
-                for i in val:
+            elif isinstance(options["N"], tuple):
+                assert len(options["N"]) == 2
+                for i in options["N"]:
                     assert isinstance(i, float)
-                assert val[0] < val[1]
+                assert options["N"][0] < options["N"][1]
                 for i in range(len(self.runs)):
                     if (
-                        self.runs[i]["nIters"] >= val[0]
-                        and self.runs[i]["nIters"] <= val[1]
+                        self.runs[i]["nIters"] >= options["N"][0]
+                        and self.runs[i]["nIters"] <= options["N"][1]
                     ):
                         ind.append(i)
                         print(f"Run {i + 1} cleared.")
                 if len(ind) == 0:
-                    print(f"No runs from length {val[0]} to {val[1]} found.")
+                    print(
+                        f"No runs from length {options["N"][0]} to {options["N"][1]} found."
+                    )
                 for j in ind:
                     del self.runs[j]
             else:

@@ -39,7 +39,7 @@ class StandardMap:
         # Initialize the array
         if isinstance(ic, int):
             assert ic > 0
-            state = np.zeros((ic, 2, self._nIters))
+            state = np.zeros((ic, 2, self._nIters + 1))
             np.random.seed(self._seed)
             state[..., 0] = np.random.uniform(
                 0,
@@ -51,12 +51,12 @@ class StandardMap:
             assert ic.shape[0] > 0
             assert np.min(ic) >= 0
             assert np.max(ic) <= 2 * np.pi
-            state = np.zeros((len(ic), 2, self._nIters))
+            state = np.zeros((len(ic), 2, self._nIters + 1))
             state[..., 0] = ic
         else:
             raise Exception('"ic" must be an integer or a batch of initial values.')
         # Run the map
-        for i in range(self._nIters - 1):
+        for i in range(self._nIters):
             state[:, 0, i + 1] = (state[:, 0, i] + self._K * np.sin(state[:, 1, i])) % (
                 2 * np.pi
             )
@@ -81,33 +81,33 @@ class StandardMap:
     # Function: get and set K
     # Implement as callable
     @property
-    def K(self):
+    def K(self) -> float:
         return self._K
 
     @K.setter
-    def K(self, K: float):
+    def K(self, K: float) -> None:
         assert K >= 0
         self._K = float(K)
 
     # Function: get and set nIters
     # Implement as callable
     @property
-    def nIters(self):
+    def nIters(self) -> int:
         return self._nIters
 
     @nIters.setter
-    def nIters(self, nIters: int):
+    def nIters(self, nIters: int) -> None:
         assert nIters > 0
         self._nIters = int(nIters)
 
     # Function: get and set seed
     # Implement as callable
     @property
-    def seed(self):
+    def seed(self) -> int:
         return self._seed
 
     @seed.setter
-    def seed(self, seed):
+    def seed(self, seed) -> None:
         self._seed = seed
 
     # Function: metadata (ALL kwargs)
@@ -175,7 +175,7 @@ class StandardMap:
                 return {
                     "K": self.runs[options["run"]]["K"],
                     "nIters": self.runs[options["run"]]["nIters"],
-                    "I_0": self.runs[options["run"]]["run"][:, :, 0],
+                    "IC": self.runs[options["run"]]["run"][:, :, 0],
                 }
             # Info for range of runs
             elif isinstance(options["run"], tuple):
@@ -191,7 +191,7 @@ class StandardMap:
                     run = {
                         "K": self.runs[i]["K"],
                         "nIters": self.runs[i]["nIters"],
-                        "I_0": self.runs[i]["run"][:, :, 0],
+                        "IC": self.runs[i]["run"][:, :, 0],
                     }
                     runs.append(run)
                 return runs
@@ -353,5 +353,5 @@ class StandardMap:
     # Default names file "[K]-[val]-len-[nIters].csv"
     # Default adds " ([number])" if filename taken
     # Default save location is "results/csvs"
-    def write(self):
+    def write(self, **options) -> None:
         pass

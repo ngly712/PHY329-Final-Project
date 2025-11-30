@@ -80,7 +80,7 @@ def test_simulate_ic():
         assert obj.runs[-1]["K"] == obj.K
         assert obj.runs[-1]["nIters"] == obj.nIters
         assert obj.runs[-1]["nSim"] == 1
-        assert obj.runs[-1]["run"].shape[2] == obj.nIters
+        assert obj.runs[-1]["run"].shape[2] == obj.nIters + 1
         assert obj.runs[-1]["run"].shape[1] == 2
         assert np.min(obj.runs[-1]["run"]) >= 0
         assert np.max(obj.runs[-1]["run"]) <= 2 * np.pi
@@ -89,7 +89,7 @@ def test_simulate_ic():
         assert obj.runs[-1]["K"] == obj.K
         assert obj.runs[-1]["nIters"] == obj.nIters
         assert obj.runs[-1]["nSim"] == 6
-        assert obj.runs[-1]["run"].shape[2] == obj.nIters
+        assert obj.runs[-1]["run"].shape[2] == obj.nIters + 1
         assert obj.runs[-1]["run"].shape[0] == 6
         assert np.min(obj.runs[-1]["run"]) >= 0
         assert np.max(obj.runs[-1]["run"]) <= 2 * np.pi
@@ -97,7 +97,7 @@ def test_simulate_ic():
         assert obj.runs[-1]["K"] == obj.K
         assert obj.runs[-1]["nIters"] == obj.nIters
         assert obj.runs[-1]["nSim"] == 3
-        assert obj.runs[-1]["run"].shape[2] == obj.nIters
+        assert obj.runs[-1]["run"].shape[2] == obj.nIters + 1
         assert obj.runs[-1]["run"].shape[0] == 3
         assert np.min(obj.runs[-1]["run"]) >= 0
         assert np.max(obj.runs[-1]["run"]) <= 2 * np.pi
@@ -107,7 +107,7 @@ def test_simulate_ic():
         assert obj.runs[-1]["K"] == obj.K
         assert obj.runs[-1]["nIters"] == obj.nIters
         assert obj.runs[-1]["nSim"] == 4
-        assert obj.runs[-1]["run"].shape[2] == obj.nIters
+        assert obj.runs[-1]["run"].shape[2] == obj.nIters + 1
         assert obj.runs[-1]["run"].shape[0] == 4
         assert np.min(obj.runs[-1]["run"]) >= 0
         assert np.max(obj.runs[-1]["run"]) <= 2 * np.pi
@@ -115,7 +115,7 @@ def test_simulate_ic():
         assert obj.runs[1]["K"] == obj.K
         assert obj.runs[1]["nIters"] == obj.nIters
         assert obj.runs[1]["nSim"] == 6
-        assert obj.runs[1]["run"].shape[2] == obj.nIters
+        assert obj.runs[1]["run"].shape[2] == obj.nIters + 1
         assert obj.runs[1]["run"].shape[0] == 6
         assert np.min(obj.runs[1]["run"]) >= 0
         assert np.max(obj.runs[1]["run"]) <= 2 * np.pi
@@ -381,6 +381,85 @@ def initN():
 # ## nIters
 # ### user, single
 # ### user, double
+def test_metadata_ind():
+    obj = sMap(nIters=10)
+    info = obj.metadata()
+    assert len(info) == 3
+    assert info["runCount"] == 0
+    assert info["K"] == 1.0
+    assert info["nIters"] == 10
+    testIc = np.array([[0.0, np.pi / 2], [np.pi, 3 * np.pi / 2], [2 * np.pi, 0.75]])
+    obj.simulate(ic=testIc)
+    info = obj.metadata()
+    assert len(info) == 5
+    assert info["runCount"] == 1
+    assert info["K"][0] == info["K"][1]
+    assert info["K"][0] == 1.0
+    assert info["nIters"][0] == info["nIters"][1]
+    assert info["nIters"][0] == 10
+    assert info["I_0"][0] == 0.0
+    assert info["I_0"][1] == 2 * np.pi
+    assert info["theta_0"][0] == 0.75
+    assert info["theta_0"][1] == 3 * np.pi / 2
+    for i in range(32):
+        obj.simulate()
+    obj.K = 0.3
+    obj.nIters = 25
+    for i in range(32):
+        obj.simulate(ic=5)
+    info = obj.metadata(run=4)
+    assert info["K"] == 1.0
+    assert info["nIters"] == 10
+    assert info["IC"].shape == (1, 2)
+    info = obj.metadata(run=-2)
+    assert info["K"] == 0.3
+    assert info["nIters"] == 25
+    assert info["IC"].shape == (5, 2)
+    try:
+        info = obj.metadata(run=75)
+    except Exception:
+        print("Not possible")
+    else:
+        raise Exception("Invalid run index passed.")
+    info = obj.metadata(run=(30, 35))
+    assert len(info) == 6
+    for i in info[:3]:
+        assert i["K"] == 1.0
+        assert i["nIters"] == 10
+        assert i["IC"].shape == (1, 2)
+    for i in info[3:]:
+        assert i["K"] == 0.3
+        assert i["nIters"] == 25
+        assert i["IC"].shape == (5, 2)
+    info = obj.metadata(run=(-7, -4))
+    for i in info:
+        assert i["K"] == 0.3
+        assert i["nIters"] == 25
+        assert i["IC"].shape == (5, 2)
+    try:
+        info = obj.metadata(run=(32, 29))
+    except Exception:
+        print("Not possible")
+    else:
+        raise Exception("Invalid run range passed.")
+    try:
+        info = obj.metadata(run=(-4, 35))
+    except Exception:
+        print("Not possible")
+    else:
+        raise Exception("Invalid run range passed.")
+    try:
+        info = obj.metadata(run=(3, 99))
+    except Exception:
+        print("Not possible")
+    else:
+        raise Exception("Invalid run range passed.")
+    try:
+        info = obj.metadata(run=(5,))
+    except Exception:
+        print("Not possible")
+    else:
+        raise Exception("Invalid run range passed.")
 
 
 # # Clear:

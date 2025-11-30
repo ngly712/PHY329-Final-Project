@@ -29,7 +29,7 @@ class StandardMap:
 
     # Function: simulate
     # Option to append new run or overwrite -- default is append
-    # User supplies initial values for I and theta -- defaults to random \
+    # User supplies initial values for I and theta -- defaults to random
     # (seeded or not)
     # I and theta are limited to [0, 2pi] (checks)
     # Initial conditions can be a batch vector or a number of random ICs
@@ -54,7 +54,7 @@ class StandardMap:
             state = np.zeros((len(ic), 2, self._nIters))
             state[..., 0] = ic
         else:
-            raise Exception("ic must be an integer or a batch of initial values.")
+            raise Exception('"ic" must be an integer or a batch of initial values.')
         # Run the map
         for i in range(self._nIters - 1):
             state[:, 0, i + 1] = (state[:, 0, i] + self._K * np.sin(state[:, 1, i])) % (
@@ -111,7 +111,7 @@ class StandardMap:
         self._seed = seed
 
     # Function: metadata (ALL kwargs)
-    # Returns the number of runs and the range of K -- default
+    # Returns the number of runs, range of K, and range of run lengths -- default
     # Returns the K, initial condition, and length of ith run in list
     # (Implement checks for i): keyword is "run" {values start at 1}
     # i can also be a range (two element tuple), inclusive
@@ -124,26 +124,167 @@ class StandardMap:
     # (same nIters checks): return "None" if not found, keyword is "N"
     # nIters can also be a range (two element tuple), check is inclusive
     # Must perform sanity checks for nIters[0] and nIters[1]
+    def metadata(self, **options) -> dict | list[dict,] | list[int,]:
+        # Check for keyword correctness
+        assert len(options) < 2
+        ind = []
+        # Default info
+        if len(options) < 1:
+            if len(self.runs) > 0:
+                minK = self.runs[0]["K"]
+                maxK = self.runs[0]["K"]
+                minN = self.runs[0]["nIters"]
+                maxN = self.runs[0]["nIters"]
+                minI = np.min(self.runs[0]["run"][:, 0, 0])
+                maxI = np.max(self.runs[0]["run"][:, 0, 0])
+                minT = np.min(self.runs[0]["run"][:, 1, 0])
+                maxT = np.max(self.runs[0]["run"][:, 1, 0])
+                for run in self.runs:
+                    if run["K"] < minK:
+                        minK = run["K"]
+                    if run["K"] > maxK:
+                        maxK = run["K"]
+                    if run["nIters"] < minN:
+                        minN = run["nIters"]
+                    if run["nIters"] > maxN:
+                        maxN = run["nIters"]
+                    check = np.min(run["run"][:, 0, 0])
+                    if check < minI:
+                        minI = check
+                    check = np.max(run["run"][:, 0, 0])
+                    if check > maxI:
+                        maxI = check
+                    check = np.min(run["run"][:, 1, 0])
+                    if check < minT:
+                        minT = check
+                    check = np.max(run["run"][:, 1, 0])
+                    if check > maxT:
+                        maxT = check
+                return {
+                    "runCount": len(self.runs),
+                    "K": (minK, maxK),
+                    "nIters": (minN, maxN),
+                    "I_0": (minI, maxI),
+                    "theta_0": (minT, maxT),
+                }
+            return {"runCount": len(self.runs), "K": self.K, "nIters": self.nIters}
+        # List index info
+        if "run" in options:
+            # Single run info
+            if isinstance(options["run"], int):
+                return {
+                    "K": self.runs[options["run"]]["K"],
+                    "nIters": self.runs[options["run"]]["nIters"],
+                    "I_0": self.runs[options["run"]]["run"][:, :, 0],
+                }
+            # Info for range of runs
+            elif isinstance(options["run"], tuple):
+                runs = []
+                assert len(options["run"]) == 2
+                for i in options["run"]:
+                    assert isinstance(i, int)
+                assert options["run"][0] < options["run"][1]
+                assert (
+                    options["run"][0] > -1 and options["run"][1] < len(self.runs)
+                ) or (options["run"][0] > -len(self.runs) and options["run"][1] < 0)
+                for i in range(options["run"][0], options["run"][1] + 1):
+                    run = {
+                        "K": self.runs[i]["K"],
+                        "nIters": self.runs[i]["nIters"],
+                        "I_0": self.runs[i]["run"][:, :, 0],
+                    }
+                    runs.append(run)
+                return runs
+            else:
+                raise Exception(
+                    "Only single values or an ascending tuple of two inclusive bounds are allowed."
+                )
+        # K parameter searching
+        elif "K" in options:
+            # Single K search
+            if isinstance(options["K"], float):
+                assert options["K"] >= 0.0
+                for i in range(len(self.runs)):
+                    if self.runs[i]["K"] == options["K"]:
+                        ind.append(i)
+                if len(ind) == 0:
+                    print(f"No runs with K = {options["K"]} found.")
+                return ind
+            # Range of K search
+            elif isinstance(options["K"], tuple):
+                assert len(options["K"]) == 2
+                for i in options["K"]:
+                    assert isinstance(i, float)
+                    assert i >= 0.0
+                assert options["K"][0] < options["K"][1]
+                for i in range(len(self.runs)):
+                    if (
+                        self.runs[i]["K"] >= options["K"][0]
+                        and self.runs[i]["K"] <= options["K"][1]
+                    ):
+                        ind.append(i)
+                if len(ind) == 0:
+                    print(
+                        f"No runs within K = [{options["K"][0]}, {options["K"][1]}] found."
+                    )
+                return ind
+            else:
+                raise Exception(
+                    "Only single values or an ascending tuple of two inclusive bounds are allowed."
+                )
+        # Run length search
+        elif "N" in options:
+            # Single length search
+            if isinstance(options["N"], int):
+                assert options["N"] > 0
+                for i in range(len(self.runs)):
+                    if self.runs[i]["nIters"] == options["N"]:
+                        ind.append(i)
+                if len(ind) == 0:
+                    print(f"No runs of length {options["N"]} found.")
+                return ind
+            # Range of length search
+            elif isinstance(options["N"], tuple):
+                assert len(options["N"]) == 2
+                for i in options["N"]:
+                    assert i > 0
+                    assert isinstance(i, int)
+                assert options["N"][0] < options["N"][1]
+                for i in range(len(self.runs)):
+                    if (
+                        self.runs[i]["nIters"] >= options["N"][0]
+                        and self.runs[i]["nIters"] <= options["N"][1]
+                    ):
+                        ind.append(i)
+                if len(ind) == 0:
+                    print(
+                        f"No runs from length {options["N"][0]} to {options["N"][1]} found."
+                    )
+                return ind
+            else:
+                raise Exception(
+                    "Only single values or an ascending tuple of two inclusive bounds are allowed."
+                )
+        else:
+            raise Exception("Only run index, K search, and run length supported.")
 
     # Redundancy: __str__
     # Returns the number of runs and the range of K
     def __str__(self) -> str:
+        info = self.metadata()
         if len(self.runs) > 0:
-            minK = self.runs[0]["K"]
-            maxK = self.runs[0]["K"]
-            minN = self.runs[0]["nIters"]
-            maxN = self.runs[0]["nIters"]
-            for run in self.runs:
-                if run["K"] < minK:
-                    minK = run["K"]
-                if run["K"] > maxK:
-                    maxK = run["K"]
-                if run["nIters"] < minN:
-                    minN = run["nIters"]
-                if run["nIters"] > maxN:
-                    maxN = run["nIters"]
-            return f"Number of runs: {len(self.runs)}\nRange of K: [{minK}, {maxK}]\nRange of lengths: [{minN}, {maxN}]"
-        return f"Current K: {self._K}\nCurrent run length: {self._nIters}\nNo runs yet."
+            return (
+                f"Number of runs: {info['runCount']}\n"
+                f"Range of K: [{info['K'][0]}, {info['K'][1]}]\n"
+                f"Range of lengths: [{info['nIters'][0]}, {info['nIters'][1]}]\n"
+                f"Range of I(0): [{info['I_0'][0]}, {info['I_0'][1]}]\n"
+                f"Range of theta(0): [{info['theta_0'][0]}, {info['theta_0'][1]}]"
+            )
+        return (
+            f"Current K: {info["K"]}\n"
+            f"Current run length: {info["nIters"]}\n"
+            f"No runs yet."
+        )
 
     # Function: clearRuns
     # does not remove current values of K/nIter/seed in object
@@ -159,7 +300,6 @@ class StandardMap:
     def clearRuns(self, **options) -> None:
         # Check for keyword correctness
         assert len(options) < 2
-        ind = []
         # Default clearing
         if len(options) < 1:
             self.runs.clear()
@@ -193,80 +333,12 @@ class StandardMap:
                 raise Exception(
                     "Only single values or an ascending tuple of two inclusive bounds are allowed."
                 )
-        # K parameter clearing
-        elif "K" in options:
-            # Single K clear
-            if isinstance(options["K"], float):
-                assert options["K"] >= 0.0
-                for i in range(len(self.runs)):
-                    if self.runs[i]["K"] == options["K"]:
-                        ind.append(i)
-                        print(f"Run {i} cleared.")
-                if len(ind) == 0:
-                    print(f"No runs with K = {options["K"]} found.")
-                for j in sorted(ind, reverse=True):
-                    del self.runs[j]
-            # Range of Ks cleared
-            elif isinstance(options["K"], tuple):
-                assert len(options["K"]) == 2
-                for i in options["K"]:
-                    assert isinstance(i, float)
-                    assert i >= 0.0
-                assert options["K"][0] < options["K"][1]
-                for i in range(len(self.runs)):
-                    if (
-                        self.runs[i]["K"] >= options["K"][0]
-                        and self.runs[i]["K"] <= options["K"][1]
-                    ):
-                        ind.append(i)
-                        print(f"Run {i} cleared.")
-                if len(ind) == 0:
-                    print(
-                        f"No runs within K = [{options["K"][0]}, {options["K"][1]}] found."
-                    )
-                for j in sorted(ind, reverse=True):
-                    del self.runs[j]
-            else:
-                raise Exception(
-                    "Only single values or an ascending tuple of two inclusive bounds are allowed."
-                )
-        # Run length clearing
-        elif "N" in options:
-            # Single length clear
-            if isinstance(options["N"], int):
-                assert options["N"] > 0
-                for i in range(len(self.runs)):
-                    if self.runs[i]["nIters"] == options["N"]:
-                        ind.append(i)
-                        print(f"Run {i} cleared.")
-                if len(ind) == 0:
-                    print(f"No runs of length {options["N"]} found.")
-                for j in sorted(ind, reverse=True):
-                    del self.runs[j]
-            # Range of lengths cleared
-            elif isinstance(options["N"], tuple):
-                assert len(options["N"]) == 2
-                for i in options["N"]:
-                    assert i > 0
-                    assert isinstance(i, int)
-                assert options["N"][0] < options["N"][1]
-                for i in range(len(self.runs)):
-                    if (
-                        self.runs[i]["nIters"] >= options["N"][0]
-                        and self.runs[i]["nIters"] <= options["N"][1]
-                    ):
-                        ind.append(i)
-                        print(f"Run {i} cleared.")
-                if len(ind) == 0:
-                    print(
-                        f"No runs from length {options["N"][0]} to {options["N"][1]} found."
-                    )
-                for j in sorted(ind, reverse=True):
-                    del self.runs[j]
-            else:
-                raise Exception(
-                    "Only single values or an ascending tuple of two inclusive bounds are allowed."
-                )
+        # K parameter and run length clearing
+        elif "K" in options or "N" in options:
+            ind = self.metadata(**options)
+            for i in sorted(ind, reverse=True):
+                print(f"Run {i} cleared.")
+                del self.runs[i]
         else:
             raise Exception("Only run index, K search, and run length supported.")
 

@@ -1,10 +1,9 @@
 # Planned imports
 # numpy
 # os
-# glob
+# re
 import numpy as np
 import os
-import glob
 import re
 
 
@@ -353,7 +352,7 @@ class StandardMap:
     # Option to write ALL arrays to CSVs -- default
     # Supply kwargs to savetxt function
     # Reserve kwarg "name" as filename (do not add .csv)
-    # Default has header txt of "K = [val]"
+    # Default has header txt of "K = [val]\nseed = [val]"
     # Default saves I then theta w/ col headers "I,theta"
     # Default names file "K-[val]-len-[nIters].csv"
     # Default adds " ([number])" if filename taken
@@ -430,7 +429,66 @@ class StandardMap:
             if "delimiter" not in options:
                 options["delimiter"] = "\t"
             if "header" not in options:
-                options["header"] = f"K = {run["K"]}\n{htxt}"
+                options["header"] = f"K = {run["K"]}\nseed = {run["seed"]}\n{htxt}"
             if "comments" not in options:
                 options["comments"] = ""
             np.savetxt(fname[i], arr.T, **options)
+
+    # Function: read CSV and add to runs
+    # File name is name without directory or .csv tag
+    # Option to append (default) or replace last ith runs
+    # File must be in the same format as produced by "write"
+    # Pass kwargs to loadtxt function
+    def read(self, fname: str | list[str,], insert: str = "append", **options) -> None:
+        assert "delimiter" not in options and "skiprows" not in options
+        # Read files
+        runs = []
+        if isinstance(fname, str):
+            file = open(f"results\\csvs\\{fname}.csv")
+            kVal = float(file.readline().split(" ")[-1])
+            seedVal = int(file.readline().split(" ")[-1])
+            arr = np.loadtxt(
+                f"results\\csvs\\{fname}.csv",
+                delimiter="\t",
+                skiprows=2,
+                **options,
+            )
+            run = {
+                "K": kVal,
+                "nIters": arr.shape[0] - 1,
+                "seed": seedVal,
+                "run": arr.T.reshape((arr.shape[1] / 2, 2, arr.shape[0])),
+                "nSim": arr.shape[1] / 2,
+            }
+            runs.append(run)
+        elif isinstance(fname, list):
+            for name in fname:
+                assert isinstance(name, str)
+                file = open(f"results\\csvs\\{name}.csv")
+                kVal = float(file.readline().split(" ")[-1])
+                seedVal = int(file.readline().split(" ")[-1])
+                arr = np.loadtxt(
+                    f"results\\csvs\\{name}.csv",
+                    delimiter="\t",
+                    skiprows=2,
+                    **options,
+                )
+                run = {
+                    "K": kVal,
+                    "nIters": arr.shape[0] - 1,
+                    "seed": seedVal,
+                    "run": arr.T.reshape((arr.shape[1] / 2, 2, arr.shape[0])),
+                    "nSim": arr.shape[1] / 2,
+                }
+                runs.append(run)
+        else:
+            raise Exception("Only a file name or a list of file names are allowed.")
+        # Add to current object
+        if insert == "append":
+            self.runs.extend(runs)
+        elif insert == "overwrite":
+            self.runs[-len(runs) :] = runs
+        else:
+            raise Exception(
+                'Invalid option. Only "append" and "overwrite" are allowed.'
+            )

@@ -440,7 +440,10 @@ class StandardMap:
     # File must be in the same format as produced by "write"
     # Pass kwargs to loadtxt function
     def read(self, fname: str | list[str,], insert: str = "append", **options) -> None:
-        assert "delimiter" not in options and "skiprows" not in options
+        if "delimiter" not in options:
+            options["delimiter"] = "\t"
+        if "skiprows" not in options:
+            options["skiprows"] = 2
         # Read files
         runs = []
         if isinstance(fname, str):
@@ -449,8 +452,6 @@ class StandardMap:
             seedVal = int(file.readline().split(" ")[-1])
             arr = np.loadtxt(
                 f"results\\csvs\\{fname}.csv",
-                delimiter="\t",
-                skiprows=2,
                 **options,
             )
             run = {
@@ -469,8 +470,6 @@ class StandardMap:
                 seedVal = int(file.readline().split(" ")[-1])
                 arr = np.loadtxt(
                     f"results\\csvs\\{name}.csv",
-                    delimiter="\t",
-                    skiprows=2,
                     **options,
                 )
                 run = {

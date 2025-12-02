@@ -1,15 +1,40 @@
-# Planned imports
-# numpy
-# os
-# re
 import numpy as np
 import os
 import re
 
 
-# Class (no inheritance)
-# standardMap
 class StandardMap:
+    """
+    A class to store the trajectories of the Chirikov-Taylor Map. Available to use from
+    a command line interface.
+
+    Attributes
+    ----------
+    K : float
+        A nonnegative "kick value" that provides an angular momentum boost. See
+        `simulate` for more details.
+    nIters : int
+        The number of iterations to travel through. Must be positive.
+    seed : int or None
+        Used to store information about NumPy's random number generator.
+    runs : list of dict
+        All previous simulations are stored here with their respective parameters.
+
+    Methods
+    -------
+        simulate(option="append", ic=1)
+            Iterates through the map from an initial condition or a batch of initial
+            conditions.
+        metadata(**options)
+            Returns information about runs or a list of indices satisfying a search
+            term.
+        clearRuns(**options)
+            Removes specified runs from the `runs` list.
+        write(**options)
+            Writes the specified runs to a `.csv` file using NumPy's `savetxt` function.
+        read(fname, **options)
+            Reads in `.csv` files to store in the `runs` list.
+    """
 
     # Initialization
     # User can set K, nIters, random seed

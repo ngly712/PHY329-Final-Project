@@ -4,18 +4,7 @@ from map.standardMap import StandardMap as sMap
 import os
 
 
-# Planned tests:
-# # Initialization:
-# ## K
-# ### default
-# ### user
-# ## nIters
-# ### default
-# ### user
-# ## seed
-# ### default
-# ### user
-# ## Check list properly initialized
+# Initialization:
 def test_initialization_K():
     obj = sMap()
     assert obj.K == 1.0
@@ -53,16 +42,7 @@ def test_initialization_nIters():
         raise Exception("nIters is invalid")
 
 
-# # Simulate:
-# ## I_0
-# ### default
-# ### user
-# ## theta_0
-# ### default
-# ### user
-# ## option - append vs replace
-# ### list length check
-# ### run parameters check
+# Simulate:
 def test_simulate_ic():
     objs = [
         sMap(),
@@ -141,13 +121,7 @@ def test_simulate_ic():
         print(obj)
 
 
-# # Getters and setters:
-# ## K
-# ### same as initialization
-# ## nIters
-# ### same as initialization
-# ## seed
-# ### same as initialization
+# Getters and setters:
 def test_mid_K():
     obj = sMap()
     assert obj.K == 1.0
@@ -370,18 +344,7 @@ def initN():
     return obj
 
 
-# # Metadata:
-# ## K range check
-# ## list length check
-# ## ind
-# ### user, single
-# ### user, double
-# ## K
-# ### user, single
-# ### user, double
-# ## nIters
-# ### user, single
-# ### user, double
+# Metadata:
 def test_metadata_ind():
     obj = sMap(nIters=10)
     info = obj.metadata()
@@ -605,17 +568,7 @@ def test_metadata_nIters():
         raise Exception("Invalid run length range passed.")
 
 
-# # Clear:
-# ## total clear check
-# ## ind
-# ### user, single
-# ### user, double
-# ## K
-# ### user, single
-# ### user, double
-# ## nIters
-# ### user, single
-# ### user, double
+# Clear:
 def test_clear_ind():
     obj = sMap(nIters=10)
     for i in range(64):
@@ -934,6 +887,7 @@ def test_clear_nIters():
         raise Exception("Invalid run length range passed.")
 
 
+# Read and write
 def test_read_write():
     obj = sMap()
     obj.write()

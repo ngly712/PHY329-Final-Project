@@ -36,15 +36,6 @@ class StandardMap:
             Reads in `.csv` files to store in the `runs` list.
     """
 
-    # Initialization
-    # User can set K, nIters, random seed
-    # K is a positive real number (checks) -- defaults to 1
-    # nIters is a positive integer (checks) -- defaults to 500
-    # seed is a positive integer w/ 0 (checks) -- defaults to None
-    # Object stores list of dicts w/ K, nIters, seed, and batched arrays for I
-    # and theta
-    # Call the list "runs"
-    # Initialization makes an empty list
     def __init__(self, K: float = 1.0, nIters: int = 500, seed=None) -> None:
         # Checks for K and nIters
         assert K >= 0
@@ -56,15 +47,83 @@ class StandardMap:
         # Initialize the list of dicts
         self.runs = []
 
-    # Function: simulate
-    # Option to append new run or overwrite -- default is append
-    # User supplies initial values for I and theta -- defaults to random
-    # (seeded or not)
-    # I and theta are limited to [0, 2pi] (checks)
-    # Initial conditions can be a batch vector or a number of random ICs
-    # Overwrite replaces most recent run in list with dict entry
-    # Append creates new dict entry in list
     def simulate(self, option: str = "append", ic: np.ndarray | int = 1) -> None:
+        """
+        Simulates the Chirikov-Taylor map from a given initial condition and adds the
+        result to `runs`.
+
+        Parameters
+        ----------
+        option : str
+            How the simulation is added to `runs`. `"append"` (default) adds the
+                simulation to the end of the list, while `"overwrite"` replaces the
+                last run with the current simulation.
+        ic : ndarray or int
+            The initial conditions for `I` and `theta`.
+            - Passing an integer will result
+                in a batch of `ic` (I, theta) pairs iterated simultaneously, where the
+                values are drawn from a uniform distribution in [0, 2 pi].
+            - Passing an ndarray of shape (number of points, 2), where the first column
+                are the I values and the second column are the theta values, will start
+                the simulation at the specified points.
+
+        Notes
+        -----
+        The Chirikov-Taylor map is given by the following recurrence relation:
+        .. math::
+            I_{n+1}=I_n+K\sin(\omega_n)\mod2\pi
+            \omega_{n+1}=\omega_n+I_{n+1}\mod2\pi
+
+        Each run in `runs` is a dictionary listing:
+        - the seed of the random number generator (`"seed"`)
+        - the time trajectories of the simulation (`"run"`)
+        - the number of iterations in the simulation (`"nIters"`)
+        - the "kick value" of the simulation (`"K"`)
+        - the number of initial conditions (`"nSim"`)
+        Use the keys above to access the desired run in the list.
+
+        Examples
+        --------
+        First, instantiate the object:
+
+        >>> import numpy as np
+        >>> from map.standardMap import StandardMap as sMap
+        >>> obj = sMap()
+
+        A default simulation:
+
+        >>> obj.simulate()
+        >>> print(obj.runs[-1])
+        {'K': 1.0, 'nIters': 500, 'seed': None, 'run': array([[[0.99831564, 0.8406607
+            , 1.47127561, ..., 5.38026427, 4.54137696, 4.14777316], [6.12486987,
+            0.68234526, 2.15362087, ..., 5.28794956, 3.54614121, 1.41072907]]], shape=
+            (1, 2, 501)), 'nSim': 1}
+
+        Simulate four trajectories at a time:
+
+        >>> obj.simulate(ic=4)
+        >>> print(obj.runs[-1]["run"].shape)
+        (4, 2, 501)
+
+        Simulate from a specified initial condition:
+        >>> ic = np.array([[0.0, np.pi / 2], [np.pi, 3 * np.pi / 2], [2 * np.pi, 0.75]])
+        >>> obj.simulate(ic=ic)
+        >>> print(obj.runs[-1]["run"][:, :, 0])
+        [[0.0       1.57079633]
+        [3.14159265 4.71238898]
+        [6.28318531 0.75      ]]
+
+        Replace the previous run when simulating:
+        >>> print(obj.runs[-1]["nSim"])
+        3
+        >>> print(len(obj.runs))
+        3
+        >>> obj.simulate(ic=5, option="overwrite")
+        >>> print(obj.runs[-1]["nSim"])
+        5
+        >>> print(len(obj.runs))
+        3
+        """
         # Initialize the array
         if isinstance(ic, int):
             assert ic > 0

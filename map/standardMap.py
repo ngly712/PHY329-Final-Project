@@ -54,11 +54,11 @@ class StandardMap:
 
         Parameters
         ----------
-        option : str
+        option : str, optional
             How the simulation is added to `runs`. `"append"` (default) adds the
                 simulation to the end of the list, while `"overwrite"` replaces the
                 last run with the current simulation.
-        ic : ndarray or int
+        ic : ndarray or int, optional
             The initial conditions for `I` and `theta`.
             - Passing an integer will result
                 in a batch of `ic` (I, theta) pairs iterated simultaneously, where the
@@ -66,6 +66,8 @@ class StandardMap:
             - Passing an ndarray of shape (number of points, 2), where the first column
                 are the I values and the second column are the theta values, will start
                 the simulation at the specified points.
+
+            The default input is a single randomly selected initial condition (`ic = 1`).
 
         Notes
         -----
@@ -505,18 +507,149 @@ class StandardMap:
             f"No runs yet."
         )
 
-    # Function: clearRuns
-    # does not remove current values of K/nIter/seed in object
-    # removes all runs from history -- default
-    # removes ith runs (Implement checks for i): keyword is "run"
-    # i can also be a range (two element tuple), inclusive
-    # Must perform sanity checks for i[0] and i[1]
-    # removes runs with given K (Implement checks for K): keyword is "K"
-    # K can also be a range (two element tuple), inclusive
-    # Must perform sanity checks for K[0] and K[1]
-    # removes runs with given length (Implement checks for nIters): keyword is "N"
-    # nIters can also be a range (two element tuple)
     def clearRuns(self, **options) -> None:
+        """
+        Removes runs from the directory of current runs. Passing no arguments will
+        remove all runs.
+
+        Parameters
+        ----------
+        **options : single values or two-element ranges
+            Specify a selection of runs to remove.
+
+            Valid keyword arguments are:
+
+            `"run"`: int or tuple of ints
+
+            An index (positive or negative) for the desired run in `runs`, or a
+            monotonically ascending two-element tuple denoting an inclusive range
+            of runs to return information about. Both elements must be the same sign.
+
+            `"K"`: float or tuple of floats
+
+            A kick value to look for in `runs`, or a monotonically ascending two-element
+            tuple denoting an inclusive range of kick values to search for. All values
+            must be nonnegative.
+
+            `"N"`: int or tuple of ints
+
+            A simulation length to look for in `runs`, or a monotonically ascending
+            two-element tuple denoting an inclusive range of simulation lengths to
+            search for. All values must be positive.
+
+        Notes
+        -----
+        Errors will not be raised when the desired `"K"` or `"N"` are not found.
+
+        Examples
+        --------
+        Assume a `StandardMap` object named `obj` exists with an arbitrary number
+        of varied runs.
+
+        Removing all runs:
+
+        >>> obj.clearRuns()
+        All runs cleared.
+        >>> len(obj.runs)
+        0
+
+        Removing a specific run:
+
+        ...earlier simulations...
+        >>> len(obj.runs)
+        39
+        >>> obj.clearRuns(run=4)
+        Run 4 cleared.
+        >>> len(obj.runs)
+        38
+        >>> obj.clearRuns(run=-3)
+        Run 35 cleared.
+        >>> len(obj.runs)
+        37
+
+        Removing a range of runs:
+
+        ...earlier simulations...
+        >>> len(obj.runs)
+        88
+        >>> obj.clearRuns(run=(4,9))
+        Run 4 cleared.
+        Run 5 cleared.
+        Run 6 cleared.
+        Run 7 cleared.
+        Run 8 cleared.
+        Run 9 cleared.
+        >>> len(obj.runs)
+        82
+        >>> obj.clearRuns(run=(-12,-10))
+        Run 70 cleared.
+        Run 71 cleared.
+        Run 72 cleared.
+        >>> len(obj.runs)
+        79
+
+        Removing a single kick value:
+
+        ...earlier simulations...
+        >>> len(obj.runs)
+        42
+        >>> obj.clearRuns(K=0.25)
+        Run 7 cleared.
+        >>> len(obj.runs)
+        41
+        >>> obj.clearRuns(K=2.3)
+        No runs found.
+        >>> len(obj.runs)
+        41
+
+        Removing a range of kick values:
+
+        ...earlier simulations...
+        >>> len(obj.runs)
+        12
+        >>> obj.clearRuns(K=(0.35,0.75))
+        Run 1 cleared.
+        Run 6 cleared.
+        Run 11 cleared.
+        >>> len(obj.runs)
+        9
+        >>> obj.clearRuns(K=(0.1, 0.2))
+        No runs found.
+        >>> len(obj.runs)
+        9
+
+        Removing a single run length:
+
+        ...earlier simulations...
+        >>> len(obj.runs)
+        30
+        >>> obj.clearRuns(N=750)
+        Run 19 cleared.
+        >>> len(obj.runs)
+        29
+        >>> obj.clearRuns(N=335)
+        No runs found.
+        >>> len(obj.runs)
+        29
+
+        Removing a range of run lengths:
+
+        ...earlier simulations...
+        >>> len(obj.runs)
+        57
+        >>> obj.clearRuns(N=(100,400))
+        Run 23 cleared.
+        Run 36 cleared.
+        Run 47 cleared.
+        Run 48 cleared.
+        Run 55 cleared.
+        >>> len(obj.runs)
+        52
+        >>> obj.clearRuns(N=(1000, 2000))
+        No runs found.
+        >>> len(obj.runs)
+        52
+        """
         # Check for keyword correctness
         assert len(options) < 2
         # Default clearing
@@ -555,6 +688,8 @@ class StandardMap:
         # K parameter and run length clearing
         elif "K" in options or "N" in options:
             ind = self.metadata(**options)
+            if len(ind) < 1:
+                print("No runs found.")
             for i in sorted(ind, reverse=True):
                 print(f"Run {i} cleared.")
                 del self.runs[i]

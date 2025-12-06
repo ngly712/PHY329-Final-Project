@@ -8,11 +8,26 @@ class MapEvaluator:
     Parameters
     ----------
     runs : list of dict
-        Typically ``aMap.runs`` from a ``standardMap`` instance.
+        Typically ``aMap.runs`` from a ``StandardMap`` instance.
         Each dict is expected to contain at least the keys
         ``"K"`` (float) and ``"run"`` (np.ndarray of shape (nSim, 2, nIters)).
-    """
 
+    Methods
+    -------
+    getKickValues()
+        Return the kick strength K for each run.
+    thetaTail(run_idx, n_tail)
+        Return the last n_tail theta values for a single run.
+    ITail(run_idx, n_tail)
+        Return the last n_tail I (momentum) values for a single run.
+    phaseSpaceData(run_idx, n_tail=100)
+        Flatten late-time I and theta arrays for phase-space plots.
+    IKDiagnosticData(n_tail=100)
+        Return flattened (K, I_n) pairs for I–K diagnostic plots.
+    thetaKDiagnosticData(n_tail=100)
+        Return flattened (K, theta_n) pairs for theta–K diagnostic plots.
+    """
+    
     def __init__(self, runs):
         self.runs = runs
 
@@ -184,6 +199,12 @@ class MapEvaluator:
         It is intended for diagnostic I-K sweep plots that illustrate the
         breakdown of invariant curves and the onset of chaos as K varies.
 
+        Parameters
+        ----------
+        n_tail : int, optional
+            Number of final iterations to extract from each trajectory in every
+            run. Must satisfy ``1 <= n_tail <= nIters`` for each run. Default is 100.
+
         Returns
         -------
         K_vals : np.ndarray
@@ -216,6 +237,12 @@ class MapEvaluator:
         It is intended for diagnostic theta-K sweep plots that illustrate the
         breakdown of invariant curves and the onset of chaos as K varies.
 
+        Parameters
+        ----------
+        n_tail : int, optional
+            Number of final iterations to extract from each trajectory in every
+            run. Must satisfy ``1 <= n_tail <= nIters`` for each run. Default is 100.
+
         Returns
         -------
         K_vals : np.ndarray
@@ -240,3 +267,4 @@ class MapEvaluator:
             theta_vals.extend(theta_trajs.ravel())
 
         return np.array(K_vals), np.array(theta_vals)
+

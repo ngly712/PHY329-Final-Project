@@ -8,11 +8,26 @@ class MapEvaluator:
     Parameters
     ----------
     runs : list of dict
-        Typically ``aMap.runs`` from a ``standardMap`` instance.
+        Typically ``aMap.runs`` from a ``StandardMap`` instance.
         Each dict is expected to contain at least the keys
         ``"K"`` (float) and ``"run"`` (np.ndarray of shape (nSim, 2, nIters)).
-    """
 
+    Methods
+    -------
+    getKickValues()
+        Return the kick strength K for each run.
+    thetaTail(run_idx, n_tail)
+        Return the last n_tail theta values for a single run.
+    ITail(run_idx, n_tail)
+        Return the last n_tail I (momentum) values for a single run.
+    phaseSpaceData(run_idx, n_tail=100)
+        Flatten late-time I and theta arrays for phase-space plots.
+    IKDiagnosticData(n_tail=100)
+        Return flattened (K, I_n) pairs for I–K diagnostic plots.
+    thetaKDiagnosticData(n_tail=100)
+        Return flattened (K, theta_n) pairs for theta–K diagnostic plots.
+    """
+    
     def __init__(self, runs):
         self.runs = runs
 
@@ -139,121 +154,7 @@ class MapEvaluator:
         n_iters = I_vals.shape[1]
         self._checkNTail(n_tail, n_iters)
         return I_vals[:, -n_tail:]
-
-    def thetaBifData(self, n_tail: int = 100):
-        """
-        Collect (K, theta) pairs for a theta-K bifurcation diagram.
-
-        For each run, this method takes the last ``n_tail`` theta values of
-        every trajectory, then flattens and pairs them with the corresponding
-        K value for that run.
-
-        Parameters
-        ----------
-        n_tail : int, optional
-            Number of final iterations to use from each trajectory.
-            Default is 100.
-
-        Returns
-        -------
-        K_vals : np.ndarray, shape (N_points,)
-            One-dimensional array of K values, with entries repeated so that
-            each theta point has a matching K.
-        theta_vals : np.ndarray, shape (N_points,)
-            One-dimensional array of theta values taken from the tails of all
-            runs and all trajectories. ``N_points`` is the total number of
-            plotted points, i.e. the sum over all runs of
-            ``nSim * n_tail`` for that run.
-
-        Notes
-        -----
-        If ``self.runs`` is empty, both ``K_vals`` and ``theta_vals`` are
-        returned as empty arrays.
-        """
-        assert isinstance(n_tail, int), "n_tail must be an integer."
-        assert n_tail > 0, "n_tail must be positive."
-
-        K_list = []
-        theta_list = []
-
-        for run_idx, run in enumerate(self.runs):
-            K = run["K"]
-            theta_tail = self.thetaTail(run_idx, n_tail)  # (nSim, n_tail)
-
-            # Flatten to 1D: all sims, all tail times
-            theta_flat = theta_tail.ravel()
-
-            # Make a matching array of K values
-            K_flat = np.full(theta_flat.shape, K, dtype=float)
-
-            theta_list.append(theta_flat)
-            K_list.append(K_flat)
-
-        if not K_list:
-            return np.array([]), np.array([])
-
-        K_vals = np.concatenate(K_list)
-        theta_vals = np.concatenate(theta_list)
-
-        return K_vals, theta_vals
-
-    def IBifData(self, n_tail: int = 100):
-        """
-        Collect (K, I) pairs for an I-K bifurcation diagram.
-
-        For each run, this method takes the last ``n_tail`` I values of every
-        trajectory, then flattens and pairs them with the corresponding K
-        value for that run.
-
-        Parameters
-        ----------
-        n_tail : int, optional
-            Number of final iterations to use from each trajectory.
-            Default is 100.
-
-        Returns
-        -------
-        K_vals : np.ndarray, shape (N_points,)
-            One-dimensional array of K values, with entries repeated so that
-            each I point has a matching K.
-        I_vals : np.ndarray, shape (N_points,)
-            One-dimensional array of I values taken from the tails of all
-            runs and all trajectories. ``N_points`` is the total number of
-            plotted points, i.e. the sum over all runs of
-            ``nSim * n_tail`` for that run.
-
-        Notes
-        -----
-        If ``self.runs`` is empty, both ``K_vals`` and ``I_vals`` are returned
-        as empty arrays.
-        """
-        assert isinstance(n_tail, int), "n_tail must be an integer."
-        assert n_tail > 0, "n_tail must be positive."
-
-        K_list = []
-        I_list = []
-
-        for run_idx, run in enumerate(self.runs):
-            K = run["K"]
-            I_tail = self.ITail(run_idx, n_tail)  # (nSim, n_tail)
-
-            # Flatten to 1D: all sims, all tail times
-            I_flat = I_tail.ravel()
-
-            # Make a matching array of K values
-            K_flat = np.full(I_flat.shape, K, dtype=float)
-
-            I_list.append(I_flat)
-            K_list.append(K_flat)
-
-        if not K_list:
-            return np.array([]), np.array([])
-
-        K_vals = np.concatenate(K_list)
-        I_vals = np.concatenate(I_list)
-
-        return K_vals, I_vals
-
+    
     def phaseSpaceData(self, run_idx: int, n_tail: int = 100):
         """
         Return I and theta values for a phase-space plot of one run.
@@ -290,3 +191,80 @@ class MapEvaluator:
         I_tail = self.getI(run_idx)[:, -n_tail:]
         theta_tail = theta[:, -n_tail:]
         return I_tail.ravel(), theta_tail.ravel()
+
+    def IKDiagnosticData(self, n_tail: int = 100):
+        """
+        Returns flattened (K, I_n) pairs taken from the late-time tail of each run.
+
+        It is intended for diagnostic I-K sweep plots that illustrate the
+        breakdown of invariant curves and the onset of chaos as K varies.
+
+        Parameters
+        ----------
+        n_tail : int, optional
+            Number of final iterations to extract from each trajectory in every
+            run. Must satisfy ``1 <= n_tail <= nIters`` for each run. Default is 100.
+
+        Returns
+        -------
+        K_vals : np.ndarray
+            K values repeated for each late-time I_n sample.
+        I_vals : np.ndarray
+            Corresponding late-time I_n values.
+        """
+        K_vals = []
+        I_vals = []
+
+        for run_dict in self.runs:
+            K = run_dict["K"]
+            run = run_dict["run"]       # shape: (nSim, 2, nIters)
+            n_iters = run.shape[2]
+            self._checkNTail(n_tail, n_iters)
+
+            # Take tail in I dimension
+            I_trajs = run[:, 0, -n_tail:]    # shape: (nSim, n_tail)
+
+            # Flatten
+            K_vals.extend([K] * I_trajs.size)
+            I_vals.extend(I_trajs.ravel())
+
+        return np.array(K_vals), np.array(I_vals)
+
+    def thetaKDiagnosticData(self, n_tail: int = 100):
+        """
+        Returns flattened (K, theta_n) pairs taken from the late-time tail of each run.
+
+        It is intended for diagnostic theta-K sweep plots that illustrate the
+        breakdown of invariant curves and the onset of chaos as K varies.
+
+        Parameters
+        ----------
+        n_tail : int, optional
+            Number of final iterations to extract from each trajectory in every
+            run. Must satisfy ``1 <= n_tail <= nIters`` for each run. Default is 100.
+
+        Returns
+        -------
+        K_vals : np.ndarray
+            K values repeated for each late-time theta_n sample.
+        theta_vals : np.ndarray
+            Corresponding late-time theta_n values.
+        """
+        K_vals = []
+        theta_vals = []
+
+        for run_dict in self.runs:
+            K = run_dict["K"]
+            run = run_dict["run"]        # shape: (nSim, 2, nIters)
+            n_iters = run.shape[2]
+            self._checkNTail(n_tail, n_iters)
+
+            # Take tail in theta dimension
+            theta_trajs = run[:, 1, -n_tail:]    # shape: (nSim, n_tail)
+
+            # Flatten
+            K_vals.extend([K] * theta_trajs.size)
+            theta_vals.extend(theta_trajs.ravel())
+
+        return np.array(K_vals), np.array(theta_vals)
+

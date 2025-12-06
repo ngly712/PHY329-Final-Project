@@ -1,6 +1,7 @@
 import numpy as np
 from plots.mapEval import MapEvaluator
 
+# run in directory one level up from tests folder: python -m tests.test_MapEvaluator
 
 def make_dummy_runs():
     """
@@ -120,13 +121,13 @@ def test_thetaTail_ITail_invalid_n_tail():
     assert_raises_assertion(evaluator.ITail, 1, -1)      # negative n_tail
 
 
-def test_thetaBifData_IBifData():
+def test_IKDiagnosticData_thetaKDiagnosticData():
     runs = make_dummy_runs()
     evaluator = MapEvaluator(runs)
 
     n_tail = 2
-    K_theta, theta_vals = evaluator.thetaBifData(n_tail=n_tail)
-    K_I, I_vals = evaluator.IBifData(n_tail=n_tail)
+    K_theta, theta_vals = evaluator.thetaKDiagnosticData(n_tail=n_tail)
+    K_I, I_vals = evaluator.IKDiagnosticData(n_tail=n_tail)
 
     # There are 2 runs, each with nSim = 2 trajectories and n_tail = 2 points
     # per trajectory -> 2 * 2 * 2 = 8 points total.
@@ -141,22 +142,25 @@ def test_thetaBifData_IBifData():
 
     # Empty runs case
     empty_eval = MapEvaluator([])
-    K_empty, theta_empty = empty_eval.thetaBifData()
-    assert K_empty.size == 0
+    K_empty_I, I_empty = empty_eval.IKDiagnosticData()
+    K_empty_theta, theta_empty = empty_eval.thetaKDiagnosticData()
+    assert K_empty_I.size == 0
+    assert I_empty.size == 0
+    assert K_empty_theta.size == 0
     assert theta_empty.size == 0
 
 
-def test_thetaBifData_IBifData_invalid_n_tail():
+def test_IKDiagnosticData_thetaKDiagnosticData_invalid_n_tail():
     runs = make_dummy_runs()
     evaluator = MapEvaluator(runs)
 
     # Non-integer
-    assert_raises_assertion(evaluator.thetaBifData, 1.5)
-    assert_raises_assertion(evaluator.IBifData, 0.0)
+    assert_raises_assertion(evaluator.thetaKDiagnosticData, 1.5)
+    assert_raises_assertion(evaluator.IKDiagnosticData, 0.0)
 
     # Non-positive
-    assert_raises_assertion(evaluator.thetaBifData, 0)
-    assert_raises_assertion(evaluator.IBifData, -3)
+    assert_raises_assertion(evaluator.thetaKDiagnosticData, 0)
+    assert_raises_assertion(evaluator.IKDiagnosticData, -3)
 
 
 def test_phaseSpaceData():
@@ -184,7 +188,7 @@ if __name__ == "__main__":
     test_getTheta_getI()
     test_thetaTail_ITail_valid()
     test_thetaTail_ITail_invalid_n_tail()
-    test_thetaBifData_IBifData()
-    test_thetaBifData_IBifData_invalid_n_tail()
+    test_IKDiagnosticData_thetaKDiagnosticData()
+    test_IKDiagnosticData_thetaKDiagnosticData_invalid_n_tail()
     test_phaseSpaceData()
     print("All MapEvaluator tests passed.")

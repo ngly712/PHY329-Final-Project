@@ -131,24 +131,31 @@ def plot_phase_tail(
     plt.show()
 
 
-def plot_I_bifurcation(
+def plot_IK_diagnostic(
     evaluator: "MapEvaluator",
     n_tail: int = 100,
     K_min: Optional[float] = None,
     K_max: Optional[float] = None,
-    title: str = "I–K Bifurcation Diagram",
+    title: str = "I-K Diagnostic Plot",
+    max_points: Optional[int] = None,
+    point_size: float = 0.1,
+    alpha: float = 0.3,
 ) -> None:
     """
-    Plot an I–K bifurcation diagram using a MapEvaluator instance.
+    Plot an I-K diagnostic diagram using a MapEvaluator instance.
+    It shows a sweep over K with late-time I_n values to
+    visualize the breakdown of invariant structures and the onset of
+    chaos.
 
     Parameters
     ----------
     evaluator : MapEvaluator
         Instance constructed from a list of standard map runs. Expected to
-        provide an ``IBifData(n_tail)`` method that returns (K_vals, I_vals).
+        provide an ``IKDiagnosticData(n_tail)`` method that returns
+        (K_vals, I_vals).
     n_tail : int, optional
         Number of final iterations to use from each trajectory when generating
-        bifurcation data. Default is 100.
+        the diagnostic data. Default is 100.
     K_min : float or None, optional
         Minimum K value to include in the plot. If None, no lower bound is
         applied. Default is None.
@@ -156,14 +163,23 @@ def plot_I_bifurcation(
         Maximum K value to include in the plot. If None, no upper bound is
         applied. Default is None.
     title : str, optional
-        Plot title. Default is "I–K Bifurcation Diagram".
+        Plot title. Default is "I-K Diagnostic Plot".
+    max_points : int or None, optional
+        If not None, randomly subsample to at most this many points for
+        plotting. Useful to keep the figure readable and lightweight.
+    point_size : float, optional
+        Matplotlib scatter marker size. Default is 0.1.
+    alpha : float, optional
+        Marker transparency (0-1). Default is 0.3.
     """
-    K_vals, I_vals = evaluator.IBifData(n_tail=n_tail)
+    # Get flattened diagnostic data from the evaluator
+    K_vals, I_vals = evaluator.IKDiagnosticData(n_tail=n_tail)
 
     if K_vals.size == 0:
         print("No runs available; nothing to plot.")
         return
 
+    # Apply K-range mask if requested
     if K_min is not None or K_max is not None:
         if K_min is None:
             K_min = float(np.min(a=K_vals))
@@ -173,62 +189,23 @@ def plot_I_bifurcation(
         K_vals = K_vals[mask]
         I_vals = I_vals[mask]
 
+    # Optional subsampling for readability / file size
+    if max_points is not None and K_vals.size > max_points:
+        rng = np.random.default_rng(0)
+        idx = rng.choice(K_vals.size, size=max_points, replace=False)
+        K_vals = K_vals[idx]
+        I_vals = I_vals[idx]
+
     plt.figure(figsize=(7, 5))
-    plt.scatter(x=K_vals, y=I_vals, s=0.1, color="black")
+    plt.scatter(
+        x=K_vals,
+        y=I_vals,
+        s=point_size,
+        alpha=alpha,
+        color="black",
+    )
     plt.xlabel(r"$K$")
     plt.ylabel(r"$I_n$ (late-time)")
-    plt.title(title)
-    plt.tight_layout()
-    plt.show()
-
-
-def plot_theta_bifurcation(
-    evaluator: "MapEvaluator",
-    n_tail: int = 100,
-    K_min: Optional[float] = None,
-    K_max: Optional[float] = None,
-    title: str = r"$\theta$–K Bifurcation Diagram",
-) -> None:
-    """
-    Plot a theta–K bifurcation diagram using a MapEvaluator instance.
-
-    Parameters
-    ----------
-    evaluator : MapEvaluator
-        Instance constructed from a list of standard map runs. Expected to
-        provide a ``thetaBifData(n_tail)`` method that returns
-        (K_vals, theta_vals).
-    n_tail : int, optional
-        Number of final iterations to use from each trajectory when generating
-        bifurcation data. Default is 100.
-    K_min : float or None, optional
-        Minimum K value to include in the plot. If None, no lower bound is
-        applied. Default is None.
-    K_max : float or None, optional
-        Maximum K value to include in the plot. If None, no upper bound is
-        applied. Default is None.
-    title : str, optional
-        Plot title. Default is "$\\theta$–K Bifurcation Diagram".
-    """
-    K_vals, theta_vals = evaluator.thetaBifData(n_tail=n_tail)
-
-    if K_vals.size == 0:
-        print("No runs available; nothing to plot.")
-        return
-
-    if K_min is not None or K_max is not None:
-        if K_min is None:
-            K_min = float(np.min(a=K_vals))
-        if K_max is None:
-            K_max = float(np.max(a=K_vals))
-        mask = (K_vals >= K_min) & (K_vals <= K_max)
-        K_vals = K_vals[mask]
-        theta_vals = theta_vals[mask]
-
-    plt.figure(figsize=(7, 5))
-    plt.scatter(x=K_vals, y=theta_vals, s=0.1, color="black")
-    plt.xlabel(r"$K$")
-    plt.ylabel(r"$\theta_n$ (late-time)")
     plt.title(title)
     plt.tight_layout()
     plt.show()

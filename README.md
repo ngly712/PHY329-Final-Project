@@ -2,16 +2,16 @@
 The [Taylor-Greene-Chirikov Map](https://mathworld.wolfram.com/StandardMap.html), or Standard Map, is a two-dimensional discrete-time recurrence relation that exhibits chaotic behavior. The system is as follows:
 
 > <p align="center">
-> $I_{n+1}=I_n+K\sin{\theta_n}$
+> $I_{n+1} = (I_n + K\sin\theta_n) \bmod 2\pi$
 > </p>
 > <p align="center">
-> $\theta_{n+1}=\theta_n+I_{n+1}$
+> $\theta_{n+1} = (\theta_n + I_{n+1}) \bmod 2\pi$
 > </p>
 
-$I$ and $\theta$ are periodic real-valued variables within $\[0, 2\pi\]$, while $K$ is a positive real number. The exact value of $K$ that results in chaotic behavior is not known, but several papers ([here](https://arxiv.org/pdf/2509.11593) and [here](https://pubs.aip.org/aip/jmp/article-abstract/20/6/1183/449401/A-method-for-determining-a-stochastic-transition?redirectedFrom=fulltext), for example) have attempted to identify a reasonable bound for the coefficient.
+$I$ and $\theta$ are periodic real-valued variables within $[0, 2\pi)$, while $K$ is a nonnegative real number. The exact value of $K$ that results in chaotic behavior is not known, but several papers ([here](https://arxiv.org/pdf/2509.11593) and [here](https://pubs.aip.org/aip/jmp/article-abstract/20/6/1183/449401/A-method-for-determining-a-stochastic-transition?redirectedFrom=fulltext), for example) have attempted to identify a reasonable bound for the coefficient.
 
 ## Our Contributions
-To experimentally determine the onset of chaos, we will implement a collection of data analysis scripts that act upon a Standard Map class instance to extract the value of $K$. These will produce a bifurcation diagram, Poincar&eacute; plots, and phase space maps that demonstrate the formation of periodic islands littered in a dense mapping. If time permits, we will expand the model to a classical [kicked rotator](https://www.sciencedirect.com/science/article/pii/S0960077905005485?via%3Dihub) system upon which the Standard map is derived.
+To experimentally determine the onset of chaos, we will implement a collection of data analysis scripts that act upon a Standard Map class instance to extract the value of $K$. These will produce Poincaré plots and phase space maps that demonstrate the formation of periodic islands littered in a dense mapping. We also generate an I–K diagnostic plot to visualize how the late-time momentum distribution changes with $K$. If time permits, we will expand the model to a classical [kicked rotator](https://www.sciencedirect.com/science/article/pii/S0960077905005485?via%3Dihub) system upon which the Standard Map is derived.
 
 # Code Structure
 `map` folder:
@@ -19,13 +19,13 @@ To experimentally determine the onset of chaos, we will implement a collection o
 
 `plots` folder:
 - `mapEval.py` will contain the class implementation for evaluating different aspects of the batch of standard map runs
-- `mapPlot.py` will contain the plotting function for the phase space plots and bifurcation diagrams
+- `mapPlot.py` will contain the plotting functions for the phase space plots and I–K diagnostic diagrams
 - This folder will also contain plots for different values of $K$ in labeled subfolders.
 
 `results` folder:
 - These will store the raw arrays for different $K$ values as well as any miscellaneous data used in the plotting (subfolders expected).
 
-` unitTests` folder:
+`tests` folder:
 - These will contain scripts to check the implementation of the Standard Map class. Useful for anyone who wants to modify it and see if their changes work.
 
 `map.ipynb` will contain the top-level report on our results
@@ -49,95 +49,5 @@ Optional:
 7. Perform a similar analysis of the chaotic behavior for the kicked rotator.
 8. Add results to `map.ipynb`.
 
----
-
 # Using the Code
-
-This repository is organized into three main Python modules:
-
-- `map/standardMap.py` — defines the `StandardMap` class, which runs simulations of the Chirikov standard map and stores results in a list of runs (`.runs`).
-- `plot/mapEval.py` — defines the `MapEvaluator` class, which provides helper methods to extract data from `StandardMap.runs` for plotting (tails, bifurcation data, phase space, etc.).
-- `plot/mapPlot.py` — contains plotting utilities for phase–space plots and bifurcation diagrams.
-
-## 1. Running a Simulation
-
-```python
-from map.standardMap import StandardMap
-
-# Create a StandardMap instance
-aMap = StandardMap(K=0.5, nIters=2000, seed=42)
-
-# Run a simulation with 100 random initial conditions
-aMap.simulate(ic=100)
-
-# The results are stored in aMap.runs
-print(len(aMap.runs))
-print(aMap.runs[0]["run"].shape)
-```
-
-## 2. Evaluating Simulation Data
-
-```python
-from plot.mapEval import MapEvaluator
-
-evaluator = MapEvaluator(aMap.runs)
-```
-
-Extracting arrays:
-
-```python
-theta = evaluator.getTheta(run_idx=0)
-I_vals = evaluator.getI(run_idx=0)
-theta_tail = evaluator.thetaTail(0, n_tail=200)
-I_tail = evaluator.ITail(0, n_tail=200)
-```
-
-Bifurcation:
-
-```python
-K_theta, theta_bif = evaluator.thetaBifData(n_tail=200)
-K_I, I_bif = evaluator.IBifData(n_tail=200)
-```
-
-Phase space:
-
-```python
-I_phase, theta_phase = evaluator.phaseSpaceData(run_idx=0, n_tail=200)
-```
-
-## 3. Plotting
-
-```python
-from plot.mapPlot import (
-    plot_phase_generic,
-    plot_phase_tail,
-    plot_bifurcation_theta,
-    plot_bifurcation_I,
-)
-```
-
-Phase-space plot:
-
-```python
-run0 = aMap.runs[0]["run"]
-plot_phase_generic(run0, mode="phase", point_size=0.1)
-```
-
-Tail-only:
-
-```python
-plot_phase_tail(evaluator, run_idx=0, n_tail=200, point_size=0.1)
-```
-
-Bifurcation:
-
-```python
-plot_bifurcation_theta(evaluator, n_tail=200)
-plot_bifurcation_I(evaluator, n_tail=200)
-```
-
-## 4. Suggested Workflow in `map.ipynb`
-
-1. Simulate using `StandardMap`.
-2. Pass `aMap.runs` into `MapEvaluator`.
-3. Use functions from `mapPlot.py` to visualize.
+For instructions on using the code and detailed plotting examples, please see `plots/README.md`.

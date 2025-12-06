@@ -5,6 +5,8 @@ This repository is organized into three main Python modules:
 - `plots/mapEval.py` — defines the `MapEvaluator` class, which provides helper methods to extract data from `StandardMap.runs` for plotting (tails, phase space, I–K diagnostic samples).
 - `plots/mapPlot.py` — contains plotting utilities for phase–space plots and \(IK\) diagnostic sweeps.
 
+Scripts should be run from the repository root so that imports (e.g., `from map.standardMap import StandardMap`) resolve correctly.
+
 ## Plotting Phase-Space Diagrams
 
 ### Import Relevant Modules
